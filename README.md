@@ -37,3 +37,26 @@ ArgoCD watches this repo. Each file under `apps/` is an ArgoCD `Application` man
          selfHeal: true
    ```
 2. Commit and push — ArgoCD will pick it up automatically.
+
+## Sealed Secrets
+
+The Sealed Secrets controller is installed via ArgoCD and runs in the `kube-system` namespace. It encrypts secrets so they can be safely stored in Git.
+
+### Backup the controller private key
+
+**CRITICAL:** After the Sealed Secrets controller is deployed, immediately back up the controller's private key. If this key is lost, all existing SealedSecrets become unrecoverable.
+
+```bash
+kubectl get secret -n kube-system -l sealedsecrets.bitnami.com/sealed-secrets-key -o yaml > sealed-secrets-key-backup.yaml
+```
+
+Store this file in a secure location (e.g., password manager, encrypted backup). **Never commit this file to Git.**
+
+### Restoring the key
+
+If you need to restore the controller key (e.g., after a cluster rebuild):
+
+```bash
+kubectl apply -f sealed-secrets-key-backup.yaml
+kubectl delete pod -n kube-system -l app.kubernetes.io/name=sealed-secrets
+```
