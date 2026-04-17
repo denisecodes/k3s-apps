@@ -5,18 +5,33 @@ ArgoCD app-of-apps repository for the [k3s-homelab](https://github.com/denisecod
 ## Structure
 
 ```
-apps/           # ArgoCD Application manifests (one per service)
-charts/         # Helm charts (optional, for custom apps)
+apps/
+├── sealed-secrets/
+│   └── application.yaml        # Sealed Secrets controller
+├── traefik/
+│   └── application.yaml        # Traefik ingress controller
+└── longhorn/
+    ├── application.yaml        # Longhorn storage
+    ├── test-application.yaml   # Automated storage test
+    └── tests/
+        ├── test-pvc-pod.yaml   # Test Job + PVC
+        └── README.md           # Test documentation
 ```
 
 ## How it works
 
-ArgoCD watches this repo. Each file under `apps/` is an ArgoCD `Application` manifest that points to a Helm chart or plain manifests. When a change is pushed here, ArgoCD automatically syncs the cluster to match.
+ArgoCD watches this repo. Each Application manifest under `apps/` (organized by service in subdirectories) points to a Helm chart or plain manifests. When a change is pushed here, ArgoCD automatically syncs the cluster to match.
 
 ## Adding an app
 
-1. Create a new `Application` manifest under `apps/`:
+1. Create a new directory under `apps/` for your service:
+   ```bash
+   mkdir apps/my-app
+   ```
+
+2. Create an `Application` manifest in that directory:
    ```yaml
+   # apps/my-app/application.yaml
    apiVersion: argoproj.io/v1alpha1
    kind: Application
    metadata:
@@ -36,7 +51,8 @@ ArgoCD watches this repo. Each file under `apps/` is an ArgoCD `Application` man
          prune: true
          selfHeal: true
    ```
-2. Commit and push — ArgoCD will pick it up automatically.
+
+3. Commit and push — ArgoCD will pick it up automatically.
 
 ## Sealed Secrets
 
