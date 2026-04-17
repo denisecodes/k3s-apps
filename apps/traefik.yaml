@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://traefik.github.io/charts
+    targetRevision: 39.0.8
+    chart: traefik
+    helm:
+      values: |
+        # Use K3s ServiceLB — Traefik gets an external IP from the node
+        service:
+          type: LoadBalancer
+        # Enable the Traefik dashboard (not exposed externally by default)
+        ingressRoute:
+          dashboard:
+            enabled: true
+        # Entrypoints
+        ports:
+          web:
+            port: 8000
+            exposedPort: 80
+            protocol: TCP
+          websecure:
+            port: 8443
+            exposedPort: 443
+            protocol: TCP
+        # Log level
+        logs:
+          general:
+            level: INFO
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: traefik
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
