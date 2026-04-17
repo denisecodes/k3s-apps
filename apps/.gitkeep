@@ -1,0 +1,2 @@
+# Add app manifests here (one YAML file per ArgoCD Application).
+# See README.md for an example.
