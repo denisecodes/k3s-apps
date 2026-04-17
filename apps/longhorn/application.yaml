@@ -33,9 +33,9 @@ spec:
     server: https://kubernetes.default.svc
     namespace: longhorn-system
   syncPolicy:
-    # Note: automated sync disabled due to Longhorn Helm chart pre-upgrade hook issue
-    # On fresh install, the hook fails because it needs resources that don't exist yet
-    # Manual sync required for first install - subsequent syncs work fine
+    automated:
+      prune: true
+      selfHeal: true
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
