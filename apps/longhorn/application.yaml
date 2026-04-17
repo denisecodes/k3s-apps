@@ -11,6 +11,10 @@ spec:
     chart: longhorn
     helm:
       values: |
+        # Disable pre-upgrade checker for ArgoCD/GitOps deployments
+        # This prevents the pre-upgrade hook from running on fresh installs
+        preUpgradeChecker:
+          jobEnabled: false
         # Default StorageClass
         defaultSettings:
           defaultStorageClass: longhorn
