@@ -42,14 +42,11 @@ kubectl apply -f apps/longhorn/application.yaml
 
 ### After First Install
 
-Once Longhorn is installed, **subsequent syncs work fine** because the hook runs against an existing installation. You can enable automated sync if desired:
+Once Longhorn is installed, **subsequent syncs work fine** because the hook runs against an existing installation.
 
-```yaml
-syncPolicy:
-  automated:
-    prune: true
-    selfHeal: true
-```
+**Note**: Automated sync is **now enabled** in `application.yaml` with prune and selfHeal. 
+
+⚠️ **For future fresh installations**: If you're installing Longhorn for the first time on a new cluster, you should temporarily disable auto-sync in `application.yaml` by commenting out the `automated:` section until after the first successful install. This avoids the pre-upgrade hook issue. Once installed, re-enable auto-sync to keep Longhorn in sync with Git.
 
 ## Automated Testing
 
