@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: longhorn
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://charts.longhorn.io
+    targetRevision: 1.11.1
+    chart: longhorn
+    helm:
+      values: |
+        # Default StorageClass
+        defaultSettings:
+          defaultStorageClass: longhorn
+        # Number of replicas for each volume
+        persistence:
+          defaultClassReplicaCount: 1
+        # Longhorn UI settings
+        service:
+          ui:
+            type: ClusterIP
+        # Enable monitoring
+        metrics:
+          serviceMonitor:
+            enabled: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: longhorn-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

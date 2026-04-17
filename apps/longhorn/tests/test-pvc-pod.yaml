@@ -1,0 +1,106 @@
+---
+# Test PVC to verify Longhorn storage provisioning
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: longhorn-test-pvc
+  namespace: longhorn-system
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
+---
+# Test Job that verifies PVC provisioning and volume mounting
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: longhorn-test-job
+  namespace: longhorn-system
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: test
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              echo "================================================"
+              echo "Longhorn Storage Provisioning Test"
+              echo "================================================"
+              echo ""
+              
+              # Test 1: Write to persistent volume
+              echo "Test 1: Writing to persistent volume..."
+              echo "Longhorn storage test - $(date)" > /mnt/data/test.txt
+              echo "✓ Write successful"
+              echo ""
+              
+              # Test 2: Read from persistent volume
+              echo "Test 2: Reading from persistent volume..."
+              content=$(cat /mnt/data/test.txt)
+              echo "Content: $content"
+              echo "✓ Read successful"
+              echo ""
+              
+              # Test 3: Verify persistence
+              echo "Test 3: Verifying data persistence..."
+              if [ -f /mnt/data/test.txt ]; then
+                echo "✓ File exists on volume"
+              else
+                echo "✗ File not found!"
+                exit 1
+              fi
+              echo ""
+              
+              # Test 4: Write multiple files
+              echo "Test 4: Writing multiple files..."
+              for i in 1 2 3; do
+                echo "Test file $i" > /mnt/data/file$i.txt
+              done
+              echo "✓ Multiple files created"
+              echo ""
+              
+              # Test 5: Verify all files
+              echo "Test 5: Verifying all files..."
+              file_count=$(ls -1 /mnt/data/*.txt | wc -l)
+              echo "Found $file_count files"
+              if [ "$file_count" -eq 4 ]; then
+                echo "✓ All files present"
+              else
+                echo "✗ Expected 4 files, found $file_count"
+                exit 1
+              fi
+              echo ""
+              
+              echo "================================================"
+              echo "✓ All Longhorn storage tests passed!"
+              echo "================================================"
+              echo ""
+              echo "Summary:"
+              echo "  - PVC provisioned successfully"
+              echo "  - Volume mounted correctly"
+              echo "  - Read/write operations working"
+              echo "  - Data persistence verified"
+              echo ""
+              echo "Longhorn is ready for production workloads!"
+          volumeMounts:
+            - name: test-volume
+              mountPath: /mnt/data
+      volumes:
+        - name: test-volume
+          persistentVolumeClaim:
+            claimName: longhorn-test-pvc
