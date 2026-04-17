@@ -10,7 +10,6 @@ spec:
     targetRevision: 1.11.1
     chart: longhorn
     helm:
-      skipHooks: true
       values: |
         # Default StorageClass
         defaultSettings:
