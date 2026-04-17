@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://charts.jetstack.io
+    targetRevision: v1.20.2
+    chart: cert-manager
+    helm:
+      values: |
+        # Install CRDs as part of the Helm release
+        crds:
+          enabled: true
+        # Enable the cert-manager webhook
+        webhook:
+          enabled: true
+        # Enable prometheus metrics
+        prometheus:
+          enabled: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,73 @@
+---
+# ServiceAccount for the patch job
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: clusterissuer-patcher
+  namespace: cert-manager
+---
+# ClusterRole to allow patching ClusterIssuers
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: clusterissuer-patcher
+rules:
+  - apiGroups: ["cert-manager.io"]
+    resources: ["clusterissuers"]
+    verbs: ["get", "patch"]
+---
+# ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: clusterissuer-patcher
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: clusterissuer-patcher
+subjects:
+  - kind: ServiceAccount
+    name: clusterissuer-patcher
+    namespace: cert-manager
+---
+# Job to patch ClusterIssuers with email from SealedSecret
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: patch-clusterissuer-email
+  namespace: cert-manager
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  template:
+    spec:
+      serviceAccountName: clusterissuer-patcher
+      restartPolicy: OnFailure
+      containers:
+        - name: patch
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              # Wait for the secret to exist (in case SealedSecret is still being decrypted)
+              until kubectl get secret letsencrypt-email -n cert-manager; do
+                echo "Waiting for letsencrypt-email secret..."
+                sleep 2
+              done
+
+              # Get the email from the secret
+              EMAIL=$(kubectl get secret letsencrypt-email -n cert-manager -o jsonpath='{.data.email}' | base64 -d)
+              
+              echo "Patching ClusterIssuers with email: ${EMAIL}"
+              
+              # Patch staging ClusterIssuer
+              kubectl patch clusterissuer letsencrypt-staging --type='json' \
+                -p="[{'op': 'replace', 'path': '/spec/acme/email', 'value': '${EMAIL}'}]"
+              
+              # Patch production ClusterIssuer
+              kubectl patch clusterissuer letsencrypt-prod --type='json' \
+                -p="[{'op': 'replace', 'path': '/spec/acme/email', 'value': '${EMAIL}'}]"
+              
+              echo "ClusterIssuers patched successfully!"
