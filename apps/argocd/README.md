@@ -1,10 +1,12 @@
 # ArgoCD Resources
 
-This directory contains additional ArgoCD resources and configuration.
+This directory contains documentation for ArgoCD.
+
+**Note**: ArgoCD itself is managed through Ansible playbooks in the [k3s-homelab](https://github.com/denisecodes/k3s-homelab) repository, not through this GitOps repo. The IngressRoute for ArgoCD is managed here via the `traefik-ingressroutes` ArgoCD Application (see `apps/traefik/ingressroutes/argocd.yaml`).
 
 ## IngressRoute
 
-The `ingressroute.yaml` configures Traefik to route traffic to the ArgoCD UI.
+The IngressRoute for ArgoCD is located at `apps/traefik/ingressroutes/argocd.yaml` and configures Traefik to route traffic to the ArgoCD UI. It is automatically deployed by the `traefik-ingressroutes` ArgoCD Application.
 
 ## Accessing ArgoCD UI
 
@@ -13,14 +15,14 @@ The `ingressroute.yaml` configures Traefik to route traffic to the ArgoCD UI.
 Once DNS is configured, access ArgoCD at:
 
 ```
-http://argocd.home.lan
+http://argocd.denise.home
 ```
 
 **Prerequisites:**
 - Traefik is running with LoadBalancer service
-- dnsmasq is configured to resolve `*.home.lan` to Traefik LoadBalancer IP
+- dnsmasq is configured to resolve `*.denise.home` to Traefik LoadBalancer IP
   - See [k3s-homelab/docs/dns.md](https://github.com/denisecodes/k3s-homelab/blob/main/docs/dns.md) for setup instructions
-- IngressRoute is deployed (included in `ingressroute.yaml`)
+- IngressRoute is deployed (managed by ArgoCD via `apps/traefik/ingressroutes/`)
 
 ### Via Port-Forward (Fallback)
 

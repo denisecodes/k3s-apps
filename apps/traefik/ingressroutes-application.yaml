@@ -1,0 +1,30 @@
+---
+# ArgoCD Application for managing Traefik IngressRoutes
+# This application watches the ingressroutes/ directory and automatically
+# deploys any IngressRoute manifests to their respective namespaces.
+#
+# To add a new route:
+# 1. Create a new YAML file in apps/traefik/ingressroutes/
+# 2. Commit and push to Git
+# 3. ArgoCD will automatically sync within 3 minutes
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik-ingressroutes
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/denisecodes/k3s-apps
+    targetRevision: HEAD
+    path: apps/traefik/ingressroutes
+  destination:
+    server: https://kubernetes.default.svc
+    # No namespace specified here - each IngressRoute defines its own namespace
+  syncPolicy:
+    automated:
+      prune: true      # Remove resources deleted from Git
+      selfHeal: true   # Revert manual changes to match Git
+    syncOptions:
+      - CreateNamespace=false  # Don't create namespaces (they already exist)

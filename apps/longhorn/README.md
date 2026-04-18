@@ -43,14 +43,14 @@ Current settings (defined in `application.yaml`):
 Once DNS is configured, access Longhorn at:
 
 ```
-http://longhorn.home.lan
+http://longhorn.denise.home
 ```
 
 **Prerequisites:**
 - Traefik is running with LoadBalancer service
-- dnsmasq is configured to resolve `*.home.lan` to Traefik LoadBalancer IP
+- dnsmasq is configured to resolve `*.denise.home` to Traefik LoadBalancer IP
   - See [k3s-homelab/docs/dns.md](https://github.com/denisecodes/k3s-homelab/blob/main/docs/dns.md) for setup instructions
-- IngressRoute is deployed (included in `ingressroute.yaml`)
+- IngressRoute is deployed (managed by ArgoCD via `apps/traefik/ingressroutes/longhorn.yaml`)
 
 ### Via Port-Forward (Fallback)
 
