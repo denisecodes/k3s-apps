@@ -38,6 +38,23 @@ Current settings (defined in `application.yaml`):
 
 ## Accessing Longhorn UI
 
+### Via Traefik Ingress (Recommended)
+
+Once DNS is configured (see issue #74), access Longhorn at:
+
+```
+http://longhorn.home.lan
+```
+
+**Prerequisites:**
+- Traefik is running with LoadBalancer service
+- dnsmasq is configured to resolve `*.home.lan` to Traefik LoadBalancer IP
+- IngressRoute is deployed (included in `ingressroute.yaml`)
+
+### Via Port-Forward (Fallback)
+
+If DNS is not yet configured, use port-forwarding:
+
 ```bash
 kubectl port-forward -n longhorn-system svc/longhorn-frontend 8080:80
 ```
