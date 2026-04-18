@@ -1,0 +1,101 @@
+# Nextcloud Helm Chart Values Override
+# Chart: nextcloud/nextcloud v9.0.5
+# App: Nextcloud v33.0.2
+# Cluster: k3s v1.33.10+k3s1
+
+# Nextcloud configuration
+nextcloud:
+  host: nextcloud.denise.home
+  username: denise
+  existingSecret:
+    enabled: true
+    secretName: nextcloud-credentials
+    usernameKey: admin-username
+    passwordKey: admin-password
+  datadir: /var/www/html/data
+  trustedDomains:
+    - nextcloud.denise.home
+  # PHP settings for better performance
+  phpConfigs:
+    uploadLimit.ini: |
+      upload_max_filesize = 8G
+      post_max_size = 8G
+      max_input_time = 3600
+      max_execution_time = 3600
+
+# Persistence for Nextcloud data
+persistence:
+  enabled: true
+  storageClass: longhorn
+  accessMode: ReadWriteOnce
+  size: 50Gi
+  annotations: {}
+
+# PostgreSQL database
+postgresql:
+  enabled: true
+  global:
+    postgresql:
+      auth:
+        username: nextcloud
+        database: nextcloud
+        existingSecret: nextcloud-credentials
+        secretKeys:
+          userPasswordKey: postgresql-password
+  primary:
+    persistence:
+      enabled: true
+      storageClass: longhorn
+      size: 8Gi
+
+# Redis for caching and file locking
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    existingSecret: nextcloud-credentials
+    existingSecretPasswordKey: redis-password
+  master:
+    persistence:
+      enabled: true
+      storageClass: longhorn
+      size: 1Gi
+
+# Disable built-in ingress (we use Traefik IngressRoute)
+ingress:
+  enabled: false
+
+# Resource limits
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+
+# Liveness and readiness probes
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+
+# Startup probe
+startupProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 30
+  successThreshold: 1

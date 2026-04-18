@@ -8,6 +8,7 @@ This directory contains all Traefik IngressRoute manifests for the cluster. Ingr
 |-------|-----------|---------|-----|
 | `argocd.yaml` | `argocd` | argocd-server | http://argocd.denise.home |
 | `longhorn.yaml` | `longhorn-system` | longhorn-frontend | http://longhorn.denise.home |
+| `nextcloud.yaml` | `nextcloud` | nextcloud | http://nextcloud.denise.home |
 | `traefik.yaml` | `traefik` | api@internal | http://traefik.denise.home |
 
 ## Adding a New IngressRoute
