@@ -6,8 +6,7 @@ Longhorn provides persistent storage for the K3s cluster via ArgoCD.
 
 - **`application.yaml`**: ArgoCD Application manifest using multiple sources pattern
 - **`values.yaml`**: Helm chart configuration overrides (stored in Git)
-- **`tests/application.yaml`**: ArgoCD Application manifest for automated storage tests
-- **`tests/`**: Test resources and scripts
+- **`tests/`**: Test resources for manual storage verification
 
 ## Installation
 
@@ -29,23 +28,44 @@ This pattern allows us to:
 
 However, with `preUpgradeChecker.jobEnabled: false`, fresh installations should work smoothly without issues.
 
-## Automated Testing
+## Manual Testing
 
-The `tests/application.yaml` manifest deploys automated storage tests that verify:
-- PVC provisioning
-- Volume mounting  
+Test resources are available in the `tests/` directory for manual verification when needed (e.g., after major upgrades or troubleshooting).
+
+### Running Tests Manually
+
+1. **Deploy the test resources:**
+   ```bash
+   kubectl apply -f apps/longhorn/tests/
+   ```
+
+2. **Check test results:**
+   ```bash
+   kubectl logs -n longhorn-system job/longhorn-test-job
+   ```
+   
+   Expected output:
+   ```
+   Testing Longhorn storage...
+   Writing test data...
+   Reading test data...
+   Test data matches!
+   Longhorn storage test PASSED
+   ```
+
+3. **Clean up test resources:**
+   ```bash
+   kubectl delete -f apps/longhorn/tests/
+   ```
+
+### What the Tests Verify
+
+- PVC provisioning via Longhorn StorageClass
+- Volume mounting to pods
 - Read/write operations
 - Data persistence
 
-To deploy the test application:
-```bash
-kubectl apply -f apps/longhorn/tests/application.yaml
-```
-
-Check test results:
-```bash
-kubectl logs -n longhorn-system job/longhorn-test-job
-```
+**Note:** Tests are meant for on-demand verification, not continuous monitoring. For production monitoring, consider enabling Prometheus metrics in `values.yaml`.
 
 ## Configuration
 
