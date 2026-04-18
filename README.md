@@ -9,13 +9,21 @@ apps/
 ├── sealed-secrets/
 │   └── application.yaml        # Sealed Secrets controller
 ├── traefik/
-│   └── application.yaml        # Traefik ingress controller
-└── longhorn/
-    ├── application.yaml        # Longhorn storage
-    ├── test-application.yaml   # Automated storage test
-    └── tests/
-        ├── test-pvc-pod.yaml   # Test Job + PVC
-        └── README.md           # Test documentation
+│   ├── application.yaml        # Traefik ingress controller
+│   ├── ingressroutes-application.yaml  # ArgoCD app for IngressRoutes
+│   └── ingressroutes/          # All Traefik IngressRoute manifests
+│       ├── argocd.yaml         # ArgoCD UI routing
+│       ├── longhorn.yaml       # Longhorn UI routing
+│       ├── traefik.yaml        # Traefik Dashboard routing
+│       └── README.md           # IngressRoute documentation
+├── longhorn/
+│   ├── application.yaml        # Longhorn storage
+│   ├── test-application.yaml   # Automated storage test
+│   └── tests/
+│       ├── test-pvc-pod.yaml   # Test Job + PVC
+│       └── README.md           # Test documentation
+└── argocd/
+    └── README.md               # ArgoCD documentation
 ```
 
 ## How it works
