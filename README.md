@@ -6,29 +6,66 @@ ArgoCD app-of-apps repository for the [k3s-homelab](https://github.com/denisecod
 
 ```
 apps/
+├── argocd/
+│   └── README.md               # ArgoCD documentation
+├── longhorn/
+│   ├── application.yaml        # Longhorn storage (multiple sources pattern)
+│   ├── values.yaml             # Longhorn Helm chart overrides
+│   ├── tests/                  # Manual storage tests
+│   │   ├── job.yaml            # Test Job
+│   │   ├── pvc.yaml            # Test PVC
+│   │   └── README.md           # Test documentation
+│   └── README.md               # Longhorn documentation
+├── nextcloud/
+│   ├── application.yaml        # Nextcloud (multiple sources pattern)
+│   ├── values.yaml             # Nextcloud Helm chart overrides
+│   ├── sealed-secret.yaml      # Encrypted credentials
+│   └── README.md               # Nextcloud documentation
 ├── sealed-secrets/
 │   └── application.yaml        # Sealed Secrets controller
-├── traefik/
-│   ├── application.yaml        # Traefik ingress controller
-│   ├── ingressroutes-application.yaml  # ArgoCD app for IngressRoutes
-│   └── ingressroutes/          # All Traefik IngressRoute manifests
-│       ├── argocd.yaml         # ArgoCD UI routing
-│       ├── longhorn.yaml       # Longhorn UI routing
-│       ├── traefik.yaml        # Traefik Dashboard routing
-│       └── README.md           # IngressRoute documentation
-├── longhorn/
-│   ├── application.yaml        # Longhorn storage
-│   ├── test-application.yaml   # Automated storage test
-│   └── tests/
-│       ├── test-pvc-pod.yaml   # Test Job + PVC
-│       └── README.md           # Test documentation
-└── argocd/
-    └── README.md               # ArgoCD documentation
+└── traefik/
+    ├── application.yaml        # Traefik ingress controller
+    ├── ingressroutes-application.yaml  # ArgoCD app for IngressRoutes
+    ├── ingressroutes/          # All Traefik IngressRoute manifests
+    │   ├── argocd.yaml         # ArgoCD UI routing
+    │   ├── longhorn.yaml       # Longhorn UI routing
+    │   ├── nextcloud.yaml      # Nextcloud routing
+    │   ├── traefik.yaml        # Traefik Dashboard routing
+    │   └── README.md           # IngressRoute documentation
+    └── README.md               # Traefik documentation
 ```
 
 ## How it works
 
 ArgoCD watches this repo. Each Application manifest under `apps/` (organized by service in subdirectories) points to a Helm chart or plain manifests. When a change is pushed here, ArgoCD automatically syncs the cluster to match.
+
+### ArgoCD Multiple Sources Pattern
+
+Applications using **remote Helm charts** (like Longhorn and Nextcloud) use ArgoCD's multiple sources pattern to combine the official Helm chart with Git-based configuration:
+
+```yaml
+spec:
+  sources:
+    # Source 1: Official Helm chart repository
+    - repoURL: https://charts.example.io
+      chart: my-chart
+      targetRevision: 1.0.0
+      helm:
+        valueFiles:
+          - $values/apps/my-app/values.yaml
+    # Source 2: This Git repository for values.yaml
+    - repoURL: https://github.com/denisecodes/k3s-apps
+      targetRevision: main
+      ref: values
+```
+
+**Benefits:**
+- Use official remote Helm charts (always up-to-date)
+- Keep configuration in Git (version control, GitOps)
+- Easy to customize without modifying Application manifests
+- Clear separation between chart source and configuration
+
+See `apps/longhorn/` and `apps/nextcloud/` for examples.
 
 ## Adding an app
 
