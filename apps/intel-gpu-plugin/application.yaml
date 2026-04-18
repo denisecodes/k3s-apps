@@ -1,0 +1,34 @@
+---
+# ArgoCD Application for Intel GPU Device Plugin
+#
+# This application deploys the Intel GPU Device Plugin to expose Intel GPUs
+# as Kubernetes resources (gpu.intel.com/i915) that can be requested by pods.
+#
+# Required for: Jellyfin hardware transcoding (Intel Quick Sync)
+# Namespace: kube-system (standard location for node-level infrastructure)
+#
+# Related:
+# - Issue: https://github.com/denisecodes/k3s-apps/issues/40
+# - Parent: https://github.com/denisecodes/k3s-homelab/issues/34
+# - Research: https://github.com/denisecodes/k3s-homelab/issues/87
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: intel-gpu-plugin
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/denisecodes/k3s-apps
+    targetRevision: HEAD
+    path: apps/intel-gpu-plugin
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false  # kube-system already exists
