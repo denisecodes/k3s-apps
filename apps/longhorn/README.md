@@ -2,9 +2,24 @@
 
 Longhorn provides persistent storage for the K3s cluster via ArgoCD.
 
+## Files
+
+- **`application.yaml`**: ArgoCD Application manifest using multiple sources pattern
+- **`values.yaml`**: Helm chart configuration overrides (stored in Git)
+- **`test-application.yaml`**: Automated storage tests
+- **`tests/`**: Test resources and scripts
+
 ## Installation
 
-The Longhorn application is configured with `preUpgradeChecker.jobEnabled: false` to avoid the pre-upgrade hook issue that affects fresh installations. This allows ArgoCD to install Longhorn smoothly without manual intervention.
+The Longhorn application uses ArgoCD's **multiple sources pattern** to combine the official Helm chart with Git-based configuration:
+
+1. **Helm chart source**: Official Longhorn repository (`https://charts.longhorn.io`)
+2. **Values source**: This Git repository (`apps/longhorn/values.yaml`)
+
+This pattern allows us to:
+- Use the official remote Helm chart (always up-to-date)
+- Keep configuration in Git (version control, GitOps)
+- Easily customize settings without modifying the Application manifest
 
 **Note**: Automated sync is **enabled** in `application.yaml` with prune and selfHeal, so Longhorn will automatically stay in sync with Git changes.
 
@@ -29,12 +44,31 @@ kubectl logs -n longhorn-system job/longhorn-test-job
 
 ## Configuration
 
-Current settings (defined in `application.yaml`):
+Configuration is managed in `values.yaml` with the following settings:
+
 - **Version**: 1.11.1 (compatible with K3s v1.33.10+k3s1)
+- **Pre-upgrade Checker**: Disabled (recommended for GitOps deployments)
 - **Default StorageClass**: `longhorn`
-- **Replica Count**: 1 (suitable for single-node homelab)
-- **UI Type**: ClusterIP (access via port-forward)
-- **Monitoring**: Disabled
+- **Replica Count**: 1 (suitable for single-node homelab, increase for production)
+- **UI Type**: ClusterIP (access via Traefik IngressRoute)
+- **Monitoring**: Disabled (can be enabled when Prometheus is deployed)
+
+### Customizing Configuration
+
+To modify Longhorn settings:
+
+1. Edit `apps/longhorn/values.yaml`
+2. Commit and push changes
+3. ArgoCD will automatically detect and apply the changes
+
+**Example**: To increase replica count for production:
+
+```yaml
+persistence:
+  defaultClassReplicaCount: 3  # Change from 1 to 3
+```
+
+For all available configuration options, see the [Longhorn Helm Chart documentation](https://github.com/longhorn/charts).
 
 ## Accessing Longhorn UI
 
