@@ -5,30 +5,18 @@ metadata:
   namespace: argocd
 spec:
   project: default
-  source:
-    repoURL: https://charts.longhorn.io
-    targetRevision: 1.11.1
-    chart: longhorn
-    helm:
-      values: |
-        # Disable pre-upgrade checker for ArgoCD/GitOps deployments
-        # This prevents the pre-upgrade hook from running on fresh installs
-        preUpgradeChecker:
-          jobEnabled: false
-        # Default StorageClass
-        defaultSettings:
-          defaultStorageClass: longhorn
-        # Number of replicas for each volume
-        persistence:
-          defaultClassReplicaCount: 1
-        # Longhorn UI settings
-        service:
-          ui:
-            type: ClusterIP
-        # Enable monitoring
-        metrics:
-          serviceMonitor:
-            enabled: false
+  sources:
+    # Longhorn Helm chart from official repository
+    - repoURL: https://charts.longhorn.io
+      targetRevision: 1.11.1
+      chart: longhorn
+      helm:
+        valueFiles:
+          - $values/apps/longhorn/values.yaml
+    # Git repository containing values.yaml
+    - repoURL: https://github.com/denisecodes/k3s-apps
+      targetRevision: main
+      ref: values
   destination:
     server: https://kubernetes.default.svc
     namespace: longhorn-system

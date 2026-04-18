@@ -1,0 +1,35 @@
+# Longhorn Helm Chart Values Override
+# Chart: longhorn/longhorn v1.11.1
+# App Version: v1.11.1
+# Cluster: k3s v1.33.10+k3s1
+# Repository: https://charts.longhorn.io
+
+# Disable pre-upgrade checker for ArgoCD/GitOps deployments
+# This prevents the pre-upgrade hook from running on fresh installs
+# and is recommended for GitOps-managed deployments
+preUpgradeChecker:
+  jobEnabled: false
+
+# Default StorageClass configuration
+# Sets 'longhorn' as the default StorageClass for the cluster
+defaultSettings:
+  defaultStorageClass: longhorn
+
+# Replication settings
+# Number of replicas for each volume (set to 1 for single-node or testing)
+# For production multi-node clusters, consider increasing to 2 or 3
+persistence:
+  defaultClassReplicaCount: 1
+
+# Longhorn UI Service configuration
+# ClusterIP makes the UI accessible only within the cluster
+# Access is provided via Traefik IngressRoute at http://longhorn.denise.home
+service:
+  ui:
+    type: ClusterIP
+
+# Monitoring configuration
+# ServiceMonitor is disabled (can be enabled when Prometheus is deployed)
+metrics:
+  serviceMonitor:
+    enabled: false
