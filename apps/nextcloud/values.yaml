@@ -24,11 +24,12 @@ nextcloud:
       max_execution_time = 3600
 
 # Persistence for Nextcloud data
+# Reduced to 20Gi for single-node testing cluster
 persistence:
   enabled: true
   storageClass: longhorn
   accessMode: ReadWriteOnce
-  size: 50Gi
+  size: 20Gi
   annotations: {}
 
 # PostgreSQL database
@@ -46,15 +47,17 @@ postgresql:
     persistence:
       enabled: true
       storageClass: longhorn
-      size: 8Gi
+      size: 4Gi
 
 # Redis for caching and file locking
+# Disabled replicas for single-node testing cluster
 redis:
   enabled: true
   auth:
     enabled: true
     existingSecret: nextcloud-credentials
     existingSecretPasswordKey: redis-password
+  architecture: standalone
   master:
     persistence:
       enabled: true
