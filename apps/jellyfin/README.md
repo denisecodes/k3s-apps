@@ -86,6 +86,7 @@ apps/jellyfin/
 ├── application.yaml           # ArgoCD Application definition
 ├── values.yaml               # Helm chart values override
 ├── sealed-secret.yaml        # Admin password (encrypted)
+├── hw-accel-config-job.yaml  # Auto-configure hardware acceleration
 ├── pvcs/
 │   ├── media-movies.yaml    # 20Gi PVC for movies
 │   ├── media-tv.yaml        # 10Gi PVC for TV shows
@@ -138,36 +139,33 @@ Add the following library paths in Jellyfin:
 
 **Important:** Keep library sizes small (< 35Gi total) until HDD is installed.
 
-#### 5. Enable Hardware Transcoding
+#### 5. Hardware Transcoding (Automatic)
 
-1. Navigate to **Dashboard → Playback**
-2. Under **Transcoding**, find **Hardware Acceleration**
-3. Select **Intel Quick Sync Video**
-4. Click **Save**
+**Hardware acceleration is configured automatically** via a Kubernetes Job that runs after Jellyfin deployment.
+
+The Job (`hw-accel-config-job.yaml`) automatically:
+- Waits for Jellyfin to create `encoding.xml`
+- Configures Intel Quick Sync (QSV) hardware acceleration
+- Enables tone mapping and hardware decoding for all supported codecs
+- Creates a marker file to prevent re-configuration
+
+**No manual setup required!** See the [Hardware Acceleration](#hardware-acceleration-automated) section below for details.
 
 #### 6. Verify Hardware Acceleration
 
-**Check if /dev/dri is mounted:**
+Hardware acceleration is configured automatically. See the [Hardware Acceleration](#hardware-acceleration-automated) section for verification steps.
+
+**Quick check:**
 ```bash
-kubectl exec -n jellyfin -it $(kubectl get pod -n jellyfin -l app.kubernetes.io/name=jellyfin -o jsonpath='{.items[0].metadata.name}') -- ls -la /dev/dri
+kubectl exec -n jellyfin deployment/jellyfin -- cat /config/config/encoding.xml | grep HardwareAccelerationType
+# Should show: <HardwareAccelerationType>qsv</HardwareAccelerationType>
 ```
 
-Expected output:
-```
-drwxr-xr-x    2 root     root           80 Jan  1 00:00 .
-drwxr-xr-x   15 root     root         3660 Jan  1 00:00 ..
-crw-rw----    1 root     video     226,   0 Jan  1 00:00 card0
-crw-rw----    1 root     render    226, 128 Jan  1 00:00 renderD128
-```
-
-**Test transcoding with a sample video:**
-1. Upload a small 4K test video to `/media/movies`
-2. Play the video and check transcoding logs:
-   ```bash
-   kubectl logs -n jellyfin -l app.kubernetes.io/name=jellyfin | grep -i transcode
-   ```
-3. Look for `vaapi` or `qsv` (Quick Sync) in the logs
-4. Monitor CPU vs GPU usage - GPU should be utilized for transcoding
+**Test transcoding:**
+1. Upload a 4K test video to `/media/movies`
+2. Play the video and change quality to trigger transcoding
+3. Verify "Transcode (HW)" appears in Jellyfin Dashboard
+4. Check transcoding performance is 4-5x realtime
 
 ## Verification Checklist
 
@@ -212,6 +210,107 @@ kubectl get ingressroute -n jellyfin
 # Verify /dev/dri device
 kubectl exec -n jellyfin -it $(kubectl get pod -n jellyfin -l app.kubernetes.io/name=jellyfin -o jsonpath='{.items[0].metadata.name}') -- ls -la /dev/dri
 ```
+
+## Hardware Acceleration (Automated)
+
+### Automatic Configuration
+
+Hardware acceleration (Intel Quick Sync) is **automatically configured** on deployment via a Kubernetes Job (`hw-accel-config-job.yaml`).
+
+**How it works:**
+1. ArgoCD deploys Jellyfin and triggers a PostSync hook
+2. Job waits for Jellyfin to create `encoding.xml` (up to 5 minutes)
+3. Job modifies `encoding.xml` to enable QSV with optimal settings
+4. Job creates marker file (`.hw-accel-configured`) to prevent re-running
+5. Job completes and pod terminates
+
+**Configuration applied:**
+- **Hardware Acceleration Type:** Intel Quick Sync (QSV)
+- **Hardware Encoding:** Enabled
+- **Tone Mapping:** Enabled
+- **VPP Tone Mapping:** Enabled
+- **Hardware Decoding Codecs:** h264, hevc, mpeg2video, vc1, vp8, vp9, av1
+
+### Verification
+
+To verify hardware acceleration is enabled:
+
+**1. Via Jellyfin UI:**
+- Navigate to Dashboard → Playback
+- Hardware acceleration should show "Intel QuickSync (QSV)"
+
+**2. Via config file:**
+```bash
+kubectl exec -n jellyfin deployment/jellyfin -- cat /config/config/encoding.xml | grep HardwareAccelerationType
+# Should output: <HardwareAccelerationType>qsv</HardwareAccelerationType>
+```
+
+**3. Via marker file:**
+```bash
+kubectl exec -n jellyfin deployment/jellyfin -- cat /config/.hw-accel-configured
+# Should output: timestamp of configuration
+```
+
+**4. Test transcoding performance:**
+- Play a 4K video and change quality to 1080p
+- Check Dashboard during playback
+- Should show "Transcode (HW)" and achieve 4-5x realtime speed
+
+### Troubleshooting
+
+**Job failed or stuck:**
+```bash
+# Check job status
+kubectl get job jellyfin-configure-hw-accel -n jellyfin
+
+# View job logs
+kubectl logs -n jellyfin job/jellyfin-configure-hw-accel
+
+# Common issues:
+# - Jellyfin pod not ready: Check main Jellyfin deployment
+# - Timeout waiting for encoding.xml: Jellyfin may not have started yet
+# - Permission issues: Verify PVC mount permissions
+```
+
+**Re-run configuration:**
+```bash
+# Delete marker file to force re-configuration
+kubectl exec -n jellyfin deployment/jellyfin -- rm /config/.hw-accel-configured
+
+# Trigger ArgoCD sync to re-run job
+kubectl delete job jellyfin-configure-hw-accel -n jellyfin
+# ArgoCD will recreate the job on next sync
+```
+
+**Manual configuration (if needed):**
+```bash
+# Access Jellyfin pod
+kubectl exec -it -n jellyfin deployment/jellyfin -- sh
+
+# Edit encoding.xml directly
+vi /config/config/encoding.xml
+
+# Or use Jellyfin UI: Dashboard → Playback → Hardware Acceleration
+```
+
+### Requirements
+
+Hardware acceleration requires:
+1. **Intel GPU Device Plugin** - Exposes GPU as `gpu.intel.com/i915` resource (deployed in kube-system)
+2. **GPU resource allocation** - Configured in `values.yaml`:
+   ```yaml
+   resources:
+     limits:
+       gpu.intel.com/i915: 1
+   ```
+3. **Intel Quick Sync support** - CPU must have Intel UHD Graphics (i5-8500 or newer)
+
+### Related Issues
+
+- GPU plugin migration: k3s-apps#40
+- Automation implementation: k3s-apps#41
+- GPU plugin version research: k3s-homelab#87
+- Intel plugin ecosystem: k3s-homelab#88
 
 ## Accessing Jellyfin
 

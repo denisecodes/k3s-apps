@@ -1,0 +1,176 @@
+---
+# Kubernetes Job: Jellyfin Hardware Acceleration Auto-Configuration
+#
+# This Job automatically configures Jellyfin to use Intel Quick Sync (QSV)
+# hardware acceleration by modifying the encoding.xml configuration file.
+#
+# Runs as an ArgoCD PostSync hook after Jellyfin deployment.
+#
+# What it does:
+# 1. Waits for Jellyfin to create encoding.xml (up to 5 minutes)
+# 2. Checks if already configured (idempotent via marker file)
+# 3. Modifies encoding.xml to enable Intel Quick Sync (QSV)
+# 4. Creates marker file to prevent re-running
+# 5. Job completes and pod terminates
+#
+# Configuration applied:
+# - Hardware Acceleration: Intel Quick Sync (QSV)
+# - Hardware Encoding: Enabled
+# - Tone Mapping: Enabled
+# - VPP Tone Mapping: Enabled
+# - Hardware Decoding: h264, hevc, mpeg2video, vc1, vp8, vp9, av1
+#
+# Related:
+# - Issue: https://github.com/denisecodes/k3s-apps/issues/41
+# - Parent: https://github.com/denisecodes/k3s-homelab/issues/34
+# - GPU Plugin: https://github.com/denisecodes/k3s-apps/issues/40
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: jellyfin-configure-hw-accel
+  namespace: jellyfin
+  annotations:
+    # ArgoCD hook - runs after Jellyfin application is synced
+    argocd.argoproj.io/hook: PostSync
+    # Delete old job before creating new one (keeps failed jobs for debugging)
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  # Retry up to 3 times if it fails
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: jellyfin-hw-accel-config
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: configure-hw-accel
+          image: busybox:1.36
+          command:
+            - /bin/sh
+            - -c
+          args:
+            - |
+              set -e
+              
+              CONFIG_FILE="/config/config/encoding.xml"
+              MARKER_FILE="/config/.hw-accel-configured"
+              
+              echo "=========================================="
+              echo "Jellyfin Hardware Acceleration Auto-Config"
+              echo "=========================================="
+              echo ""
+              
+              # Check if already configured
+              if [ -f "$MARKER_FILE" ]; then
+                echo "✓ Hardware acceleration already configured"
+                echo "  Marker file exists: $MARKER_FILE"
+                echo "  Created: $(cat $MARKER_FILE)"
+                echo ""
+                echo "Skipping configuration. Job complete."
+                exit 0
+              fi
+              
+              # Wait for Jellyfin to create encoding.xml (max 5 minutes)
+              echo "Waiting for Jellyfin to create encoding.xml..."
+              TIMEOUT=300
+              ELAPSED=0
+              while [ ! -f "$CONFIG_FILE" ] && [ $ELAPSED -lt $TIMEOUT ]; do
+                sleep 5
+                ELAPSED=$((ELAPSED + 5))
+                if [ $((ELAPSED % 30)) -eq 0 ]; then
+                  echo "  Still waiting... ${ELAPSED}s elapsed (timeout: ${TIMEOUT}s)"
+                fi
+              done
+              
+              if [ ! -f "$CONFIG_FILE" ]; then
+                echo "✗ ERROR: encoding.xml not created within ${TIMEOUT}s timeout"
+                echo ""
+                echo "Troubleshooting:"
+                echo "  1. Check if Jellyfin pod is running: kubectl get pods -n jellyfin"
+                echo "  2. Check Jellyfin logs: kubectl logs -n jellyfin -l app.kubernetes.io/name=jellyfin"
+                echo "  3. Verify PVC is mounted: kubectl describe pod -n jellyfin | grep -A5 Volumes"
+                exit 1
+              fi
+              
+              echo "✓ Found encoding.xml at $CONFIG_FILE"
+              echo ""
+              
+              # Check if already configured (in case marker was manually deleted)
+              if grep -q '<HardwareAccelerationType>qsv</HardwareAccelerationType>' "$CONFIG_FILE"; then
+                echo "✓ Hardware acceleration already set to QSV in config"
+                echo "  Creating marker file for future runs..."
+                date > "$MARKER_FILE"
+                exit 0
+              fi
+              
+              # Backup original config
+              BACKUP_FILE="${CONFIG_FILE}.backup-$(date +%Y%m%d-%H%M%S)"
+              echo "Creating backup: $BACKUP_FILE"
+              cp "$CONFIG_FILE" "$BACKUP_FILE"
+              echo ""
+              
+              # Configure Intel Quick Sync hardware acceleration
+              echo "Configuring Intel Quick Sync (QSV) hardware acceleration..."
+              echo ""
+              
+              # Update hardware acceleration type
+              echo "  - Setting HardwareAccelerationType to 'qsv'"
+              sed -i 's|<HardwareAccelerationType>none</HardwareAccelerationType>|<HardwareAccelerationType>qsv</HardwareAccelerationType>|g' "$CONFIG_FILE"
+              
+              # Enable hardware encoding
+              echo "  - Enabling hardware encoding"
+              sed -i 's|<EnableHardwareEncoding>false</EnableHardwareEncoding>|<EnableHardwareEncoding>true</EnableHardwareEncoding>|g' "$CONFIG_FILE"
+              
+              # Enable tone mapping
+              echo "  - Enabling tone mapping"
+              sed -i 's|<EnableTonemapping>false</EnableTonemapping>|<EnableTonemapping>true</EnableTonemapping>|g' "$CONFIG_FILE"
+              
+              # Enable VPP tone mapping
+              echo "  - Enabling VPP tone mapping"
+              sed -i 's|<EnableVppTonemapping>false</EnableVppTonemapping>|<EnableVppTonemapping>true</EnableVppTonemapping>|g' "$CONFIG_FILE"
+              
+              # Set hardware decoding codecs
+              echo "  - Setting hardware decoding codecs"
+              sed -i 's|<HardwareDecodingCodecs />|<HardwareDecodingCodecs><string>h264</string><string>hevc</string><string>mpeg2video</string><string>vc1</string><string>vp8</string><string>vp9</string><string>av1</string></HardwareDecodingCodecs>|g' "$CONFIG_FILE"
+              
+              # Create marker file with timestamp
+              date > "$MARKER_FILE"
+              
+              echo ""
+              echo "=========================================="
+              echo "✓ Configuration Complete!"
+              echo "=========================================="
+              echo ""
+              echo "Applied settings:"
+              echo "  • Hardware Acceleration: Intel Quick Sync (QSV)"
+              echo "  • Hardware Encoding: Enabled"
+              echo "  • Tone Mapping: Enabled"
+              echo "  • VPP Tone Mapping: Enabled"
+              echo "  • Hardware Decoding Codecs:"
+              echo "    - h264, hevc, mpeg2video, vc1"
+              echo "    - vp8, vp9, av1"
+              echo ""
+              echo "Next steps:"
+              echo "  1. Jellyfin will use these settings for all future transcodes"
+              echo "  2. Test by playing a video and changing quality"
+              echo "  3. Verify 'Transcode (HW)' appears in Dashboard during playback"
+              echo ""
+              echo "Marker file created: $MARKER_FILE"
+              echo "Job complete. Pod will terminate."
+              
+          volumeMounts:
+            - name: config
+              mountPath: /config
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: jellyfin-config
