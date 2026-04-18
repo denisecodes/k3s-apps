@@ -40,7 +40,7 @@ Current settings (defined in `application.yaml`):
 
 ### Via Traefik Ingress (Recommended)
 
-Once DNS is configured (see issue #74), access Longhorn at:
+Once DNS is configured, access Longhorn at:
 
 ```
 http://longhorn.home.lan
@@ -49,6 +49,7 @@ http://longhorn.home.lan
 **Prerequisites:**
 - Traefik is running with LoadBalancer service
 - dnsmasq is configured to resolve `*.home.lan` to Traefik LoadBalancer IP
+  - See [k3s-homelab/docs/dns.md](https://github.com/denisecodes/k3s-homelab/blob/main/docs/dns.md) for setup instructions
 - IngressRoute is deployed (included in `ingressroute.yaml`)
 
 ### Via Port-Forward (Fallback)
