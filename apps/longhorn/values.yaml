@@ -13,9 +13,11 @@ preUpgradeChecker:
 # Default StorageClass configuration
 # Sets 'longhorn' as the default StorageClass for the cluster
 # Default replica count set to 1 for single-node cluster
+# Storage reserve lowered to 10% for single-node testing (default is 25%)
 defaultSettings:
   defaultStorageClass: longhorn
   defaultReplicaCount: 1
+  storageMinimalAvailablePercentage: 10
 
 # Replication settings
 # Number of replicas for each volume (set to 1 for single-node or testing)
