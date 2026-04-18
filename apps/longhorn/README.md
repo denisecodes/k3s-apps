@@ -6,7 +6,7 @@ Longhorn provides persistent storage for the K3s cluster via ArgoCD.
 
 - **`application.yaml`**: ArgoCD Application manifest using multiple sources pattern
 - **`values.yaml`**: Helm chart configuration overrides (stored in Git)
-- **`test-application.yaml`**: Automated storage tests
+- **`tests/application.yaml`**: ArgoCD Application manifest for automated storage tests
 - **`tests/`**: Test resources and scripts
 
 ## Installation
@@ -31,11 +31,16 @@ However, with `preUpgradeChecker.jobEnabled: false`, fresh installations should 
 
 ## Automated Testing
 
-The `test-application.yaml` deploys automated storage tests that verify:
+The `tests/application.yaml` manifest deploys automated storage tests that verify:
 - PVC provisioning
 - Volume mounting  
 - Read/write operations
 - Data persistence
+
+To deploy the test application:
+```bash
+kubectl apply -f apps/longhorn/tests/application.yaml
+```
 
 Check test results:
 ```bash
