@@ -67,6 +67,19 @@ Test resources are available in the `tests/` directory for manual verification w
 
 **Note:** Tests are meant for on-demand verification, not continuous monitoring. For production monitoring, consider enabling Prometheus metrics in `values.yaml`.
 
+### Why Tests Are Manual
+
+Test resources in this directory are **intentionally excluded** from automatic deployment by the `argocd-apps` Application using the exclusion pattern `**/tests/**`.
+
+This prevents:
+- Continuous deployment of test Jobs and PVCs
+- Unnecessary resource consumption
+- Confusion about which resources are for production vs testing
+
+The `argocd-apps` Application (App of Apps pattern) scans `apps/` recursively but skips `**/tests/**` directories. This is configured in the k3s-homelab repository's `argocd-setup.yml` playbook.
+
+For more information on directory exclusions, see the [ArgoCD documentation](https://github.com/denisecodes/k3s-homelab/blob/main/docs/argocd.md#directory-exclusions-and-why-theyre-needed) in k3s-homelab.
+
 ## Configuration
 
 Configuration is managed in `values.yaml` with the following settings:
