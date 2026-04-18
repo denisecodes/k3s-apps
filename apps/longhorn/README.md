@@ -2,51 +2,17 @@
 
 Longhorn provides persistent storage for the K3s cluster via ArgoCD.
 
-## ⚠️ Known Issue: First-Time Installation
+## Installation
 
-The Longhorn Helm chart has a `pre-upgrade` hook that causes issues on **fresh installations** (not upgrades). The hook job fails because it needs a ServiceAccount that doesn't exist yet (chicken-and-egg problem).
+The Longhorn application is configured with `preUpgradeChecker.jobEnabled: false` to avoid the pre-upgrade hook issue that affects fresh installations. This allows ArgoCD to install Longhorn smoothly without manual intervention.
 
-### Workaround for First Install
+**Note**: Automated sync is **enabled** in `application.yaml` with prune and selfHeal, so Longhorn will automatically stay in sync with Git changes.
 
-**Option 1: Delete the stuck hook job (Recommended)**
+### First-Time Installation Notes
 
-1. ArgoCD will show Longhorn as OutOfSync with message: `waiting for completion of hook batch/Job/longhorn-pre-upgrade`
-2. Delete the stuck job:
-   ```bash
-   kubectl delete job longhorn-pre-upgrade -n longhorn-system
-   ```
-3. ArgoCD will proceed with the installation
-4. Wait for Longhorn pods to be ready (~2-3 minutes)
+⚠️ **If you're setting up on a new cluster**: The automated sync is already enabled. If you encounter any sync issues during first install, you can temporarily disable auto-sync by commenting out the `automated:` section in `application.yaml`, perform the initial sync manually, then re-enable auto-sync.
 
-**Option 2: Manual Helm install first**
-
-If the above doesn't work, install Longhorn manually without hooks, then let ArgoCD adopt it:
-
-```bash
-helm repo add longhorn https://charts.longhorn.io
-helm repo update
-
-helm install longhorn longhorn/longhorn \
-  --namespace longhorn-system \
-  --create-namespace \
-  --version 1.11.1 \
-  --set defaultSettings.defaultStorageClass=longhorn \
-  --set persistence.defaultClassReplicaCount=1 \
-  --set service.ui.type=ClusterIP \
-  --set metrics.serviceMonitor.enabled=false \
-  --no-hooks
-
-# Then apply the ArgoCD Application
-kubectl apply -f apps/longhorn/application.yaml
-```
-
-### After First Install
-
-Once Longhorn is installed, **subsequent syncs work fine** because the hook runs against an existing installation.
-
-**Note**: Automated sync is **now enabled** in `application.yaml` with prune and selfHeal. 
-
-⚠️ **For future fresh installations**: If you're installing Longhorn for the first time on a new cluster, you should temporarily disable auto-sync in `application.yaml` by commenting out the `automated:` section until after the first successful install. This avoids the pre-upgrade hook issue. Once installed, re-enable auto-sync to keep Longhorn in sync with Git.
+However, with `preUpgradeChecker.jobEnabled: false`, fresh installations should work smoothly without issues.
 
 ## Automated Testing
 
