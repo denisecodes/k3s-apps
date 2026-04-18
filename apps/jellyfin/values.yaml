@@ -24,13 +24,8 @@ persistence:
   media:
     enabled: false
 
-# Hardware transcoding and media volumes
+# Media volumes (manual PVCs for better organization)
 volumes:
-  # /dev/dri device for Intel Quick Sync
-  - name: dri
-    hostPath:
-      path: /dev/dri
-  
   # Movies PVC (references pvcs/media-movies.yaml)
   - name: media-movies
     persistentVolumeClaim:
@@ -47,10 +42,6 @@ volumes:
       claimName: jellyfin-media-music
 
 volumeMounts:
-  # Mount /dev/dri for GPU transcoding
-  - name: dri
-    mountPath: /dev/dri
-  
   # Mount movies at /media/movies
   - name: media-movies
     mountPath: /media/movies
@@ -63,16 +54,8 @@ volumeMounts:
   - name: media-music
     mountPath: /media/music
 
-# Security context for GPU access
-securityContext:
-  capabilities:
-    add:
-      - SYS_ADMIN
-    drop:
-      - ALL
-  privileged: false
-
-# Resource limits for 4K transcoding
+# Resource limits for 4K transcoding with Intel Quick Sync
+# GPU resource request enables hardware acceleration via Intel GPU Device Plugin
 resources:
   requests:
     cpu: 500m
@@ -80,6 +63,7 @@ resources:
   limits:
     cpu: "4"
     memory: 8Gi
+    gpu.intel.com/i915: 1
 
 # Service configuration
 service:
