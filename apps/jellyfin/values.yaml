@@ -1,0 +1,105 @@
+# Jellyfin Helm Chart Values Override
+# Chart: jellyfin/jellyfin v3.2.0
+# App: Jellyfin v10.11.8
+# Cluster: k3s v1.33.10+k3s1
+
+# Persistence configuration
+persistence:
+  # Config volume (database, settings, metadata)
+  config:
+    enabled: true
+    size: 10Gi
+    storageClass: longhorn
+    accessMode: ReadWriteOnce
+  
+  # Cache volume (transcoding temp files)
+  cache:
+    enabled: true
+    type: pvc
+    size: 50Gi
+    storageClass: longhorn
+    accessMode: ReadWriteOnce
+  
+  # Disable built-in media volume (using manual PVCs for consistency)
+  media:
+    enabled: false
+
+# Hardware transcoding and media volumes
+volumes:
+  # /dev/dri device for Intel Quick Sync
+  - name: dri
+    hostPath:
+      path: /dev/dri
+  
+  # Movies PVC (references pvcs/media-movies.yaml)
+  - name: media-movies
+    persistentVolumeClaim:
+      claimName: jellyfin-media-movies
+  
+  # TV shows PVC (references pvcs/media-tv.yaml)
+  - name: media-tv
+    persistentVolumeClaim:
+      claimName: jellyfin-media-tv
+  
+  # Music PVC (references pvcs/media-music.yaml)
+  - name: media-music
+    persistentVolumeClaim:
+      claimName: jellyfin-media-music
+
+volumeMounts:
+  # Mount /dev/dri for GPU transcoding
+  - name: dri
+    mountPath: /dev/dri
+  
+  # Mount movies at /media/movies
+  - name: media-movies
+    mountPath: /media/movies
+  
+  # Mount TV shows at /media/tv
+  - name: media-tv
+    mountPath: /media/tv
+  
+  # Mount music at /media/music
+  - name: media-music
+    mountPath: /media/music
+
+# Security context for GPU access
+securityContext:
+  capabilities:
+    add:
+      - SYS_ADMIN
+    drop:
+      - ALL
+  privileged: false
+
+# Resource limits for 4K transcoding
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: "4"
+    memory: 8Gi
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 8096
+
+# Disable built-in ingress (using Traefik IngressRoute)
+ingress:
+  enabled: false
+
+# Health probes - allow extra time for startup with large libraries
+startupProbe:
+  failureThreshold: 60
+  periodSeconds: 10
+  initialDelaySeconds: 0
+
+livenessProbe:
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  initialDelaySeconds: 30
+  periodSeconds: 10
