@@ -22,7 +22,8 @@ apps/
 │   ├── sealed-secret.yaml      # Encrypted credentials
 │   └── README.md               # Nextcloud documentation
 ├── sealed-secrets/
-│   └── application.yaml        # Sealed Secrets controller
+│   ├── application.yaml        # Sealed Secrets controller
+│   └── README.md               # Sealed Secrets guide
 └── traefik/
     ├── application.yaml        # Traefik ingress controller
     ├── ingressroutes-application.yaml  # ArgoCD app for IngressRoutes
@@ -123,6 +124,8 @@ See the [k3s-homelab ArgoCD documentation](https://github.com/denisecodes/k3s-ho
 ## Sealed Secrets
 
 The Sealed Secrets controller is installed via ArgoCD and runs in the `kube-system` namespace. It encrypts secrets so they can be safely stored in Git.
+
+For detailed instructions on using Sealed Secrets, see the [Sealed Secrets Guide](apps/sealed-secrets/README.md).
 
 ### Backup the controller private key
 
