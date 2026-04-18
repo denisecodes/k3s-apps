@@ -118,10 +118,16 @@ If you want to test manually instead of the automated test:
 
 ```bash
 # Apply test resources manually
-kubectl apply -f manifests/longhorn-test/test-pvc-pod.yaml
+kubectl apply -f apps/longhorn/tests/test-pvc-pod.yaml
+
+# Check the test job status
+kubectl get job longhorn-test-job -n longhorn-system
+
+# View test logs to track results
+kubectl logs -n longhorn-system job/longhorn-test-job
 
 # Delete test resources when done
-kubectl delete -f manifests/longhorn-test/test-pvc-pod.yaml
+kubectl delete -f apps/longhorn/tests/test-pvc-pod.yaml
 ```
 
 ## Verification via Longhorn UI
