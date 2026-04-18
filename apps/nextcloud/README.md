@@ -23,13 +23,25 @@ This directory contains the ArgoCD Application manifest and configuration for de
 
 ### 1. Nextcloud Application (`application.yaml`)
 ArgoCD Application manifest that:
-- References `values.yaml` for Helm chart overrides
+- Uses **multiple sources pattern** to combine remote Helm chart with Git-based values
 - Deploys to `nextcloud` namespace
 - Auto-sync and self-heal enabled
 - Creates namespace automatically
 
-### 2. Helm Values Override (`values.yaml`)
-Configuration for:
+**ArgoCD Multiple Sources Pattern:**
+The Application uses two sources:
+1. **Helm chart source**: Official Nextcloud Helm repository (`https://nextcloud.github.io/helm/`)
+2. **Values source**: This Git repository for `values.yaml`
+
+This pattern allows us to:
+- Use the official remote Helm chart (always up-to-date)
+- Keep configuration in Git (version control, GitOps)
+- Reference values with `$values/apps/nextcloud/values.yaml`
+
+### 2. Helm Values (`values.yaml`)
+Contains all Nextcloud configuration overrides, stored in Git for version control.
+
+Configuration includes:
 - **Nextcloud**: Admin user, domain, trusted domains, PHP limits
 - **PostgreSQL**: Database backend with 8Gi storage
 - **Redis**: Caching and file locking with 1Gi storage
