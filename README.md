@@ -67,6 +67,27 @@ spec:
 
 See `apps/longhorn/` and `apps/nextcloud/` for examples.
 
+### App-of-Apps Directory Exclusions
+
+The `argocd-apps` Application (App of Apps) recursively scans the `apps/` directory but **excludes** certain patterns to prevent resource conflicts and unwanted deployments:
+
+```yaml
+directory:
+  recurse: true
+  exclude: "{**/ingressroutes/**,**/tests/**}"
+```
+
+**Excluded directories:**
+- `**/ingressroutes/**` - Managed by dedicated `traefik-ingressroutes` Application
+- `**/tests/**` - Manual test resources (not for automatic deployment)
+
+This ensures:
+- No `SharedResourceWarning` errors from multiple Applications managing the same resources
+- Test resources are only deployed on-demand for verification
+- Clear ownership boundaries between Applications
+
+See the [k3s-homelab ArgoCD documentation](https://github.com/denisecodes/k3s-homelab/blob/main/docs/argocd.md#directory-exclusions-and-why-theyre-needed) for more details.
+
 ## Adding an app
 
 1. Create a new directory under `apps/` for your service:
