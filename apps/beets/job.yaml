@@ -5,7 +5,13 @@ metadata:
   namespace: jellyfin
 spec:
   ttlSecondsAfterFinished: 3600
+  selector:
+    matchLabels:
+      app: beets-tagger
   template:
+    metadata:
+      labels:
+        app: beets-tagger
     spec:
       containers:
       - name: beets
