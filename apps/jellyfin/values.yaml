@@ -67,7 +67,7 @@ resources:
 
 # Service configuration
 service:
-  type: ClusterIP
+  type: NodePort
   port: 8096
 
 # Disable built-in ingress (using Traefik IngressRoute)
