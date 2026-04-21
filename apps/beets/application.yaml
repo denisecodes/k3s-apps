@@ -18,4 +18,3 @@ spec:
   syncPolicy:
     syncOptions:
       - CreateNamespace=false
-      - Replace=true  # Forces Job deletion+recreation so it actually re-runs
