@@ -26,3 +26,6 @@ data:
       auto: yes
     embedart:
       auto: yes
+    match:
+      strong_rec_thresh: 0.04   # lower = tag more, higher = skip more
+      medium_rec_thresh: 0.25
