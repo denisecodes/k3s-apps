@@ -3,15 +3,13 @@ kind: Job
 metadata:
   name: beets-tagger-job
   namespace: jellyfin
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   ttlSecondsAfterFinished: 3600
-  selector:
-    matchLabels:
-      app: beets-tagger
   template:
     metadata:
-      labels:
-        app: beets-tagger
     spec:
       containers:
       - name: beets
