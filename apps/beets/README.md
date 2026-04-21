@@ -34,6 +34,13 @@ kubectl logs -n jellyfin job/beets-tagger-job -f
 ```
 
 The import log is printed at the end. `kubectl logs` works on completed pods too, so you can always retrieve it after the fact — you just can't `exec` into a completed pod. The Job cleans itself up automatically after 1 hour. You can also delete it manually:
+**3. Check the import log for what was tagged, skipped, or failed:**
+
+```bash
+kubectl exec -n jellyfin job/beets-tagger-job -- cat /config/import.log
+```
+
+The Job cleans itself up automatically after 1 hour. You can also delete it manually:
 
 ```bash
 kubectl delete job -n jellyfin beets-tagger-job
