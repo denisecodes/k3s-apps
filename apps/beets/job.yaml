@@ -22,6 +22,10 @@ spec:
             cp /beets-config/config.yaml /config/config.yaml
 
             echo "Starting beets import..."
+            echo "--- MusicBrainz connectivity check ---"
+            curl -sf --max-time 5 https://musicbrainz.org > /dev/null \
+              && echo "MusicBrainz: reachable" \
+              || echo "MusicBrainz: NOT reachable (autotag will have no candidates)"
             beet -c /config/config.yaml import -q /media/music
 
             echo "Tagging complete!"

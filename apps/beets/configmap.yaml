@@ -28,5 +28,6 @@ data:
     embedart:
       auto: yes
     match:
-      strong_rec_thresh: 0.50   # accept any match with distance < 0.50 in quiet mode
-      medium_rec_thresh: 0.75
+      strong_rec_thresh: 0.90   # anything below this = strong = auto-apply in quiet mode
+      medium_rec_thresh: 0.90   # same as strong = no medium zone, so nothing gets skipped
+                                # distances >= 0.90 fall to none_rec_action: asis
