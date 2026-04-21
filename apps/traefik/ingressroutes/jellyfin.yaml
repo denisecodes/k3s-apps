@@ -14,18 +14,3 @@ spec:
       services:
         - name: jellyfin
           port: 8096
----
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: jellyfin-tailscale
-  namespace: jellyfin
-spec:
-  entryPoints:
-    - web
-  routes:
-    - match: Host(`jellyfin.denise-home-k3s.tail7b6c16.ts.net`)
-      kind: Rule
-      services:
-        - name: jellyfin
-          port: 8096
