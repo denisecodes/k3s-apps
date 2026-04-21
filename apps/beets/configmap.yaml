@@ -14,6 +14,7 @@ data:
       autotag: yes
       timid: no
       log: /config/import.log
+      none_rec_action: asis  # if no match found at all, import as-is rather than skip
     plugins:
       - fetchart
       - embedart
@@ -27,5 +28,5 @@ data:
     embedart:
       auto: yes
     match:
-      strong_rec_thresh: 0.15   # distance below this = auto-apply in quiet mode (raise to tag more)
-      medium_rec_thresh: 0.40
+      strong_rec_thresh: 0.50   # accept any match with distance < 0.50 in quiet mode
+      medium_rec_thresh: 0.75
