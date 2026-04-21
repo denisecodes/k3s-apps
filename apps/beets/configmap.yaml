@@ -27,5 +27,5 @@ data:
     embedart:
       auto: yes
     match:
-      strong_rec_thresh: 0.04   # lower = tag more, higher = skip more
-      medium_rec_thresh: 0.25
+      strong_rec_thresh: 0.15   # distance below this = auto-apply in quiet mode (raise to tag more)
+      medium_rec_thresh: 0.40
