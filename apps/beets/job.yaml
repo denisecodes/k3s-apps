@@ -22,11 +22,11 @@ spec:
             cp /beets-config/config.yaml /config/config.yaml
 
             echo "Starting beets import..."
-            beet -v -c /config/config.yaml import --pretend /media/music 2>&1 | tee /config/pretend.log || true
+            beet -c /config/config.yaml import -q /media/music
 
             echo "Tagging complete!"
-            echo "--- pretend.log ---"
-            cat /config/pretend.log
+            echo "--- import.log ---"
+            cat /config/import.log
         env:
         - name: PUID
           value: "1000"
