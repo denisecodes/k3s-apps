@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: beets-tagger-job
+  namespace: jellyfin
+spec:
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      containers:
+      - name: beets
+        image: lscr.io/linuxserver/beets:latest
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            echo "Setting up beets config..."
+            mkdir -p /config
+            cp /beets-config/config.yaml /config/config.yaml
+
+            echo "Starting beets import..."
+            beet -c /config/config.yaml import -q /media/music
+
+            echo "Tagging complete! Check /config/import.log for details."
+        env:
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+        volumeMounts:
+        - name: music
+          mountPath: /media/music
+        - name: beets-config
+          mountPath: /beets-config
+        - name: beets-data
+          mountPath: /config
+      volumes:
+      - name: music
+        persistentVolumeClaim:
+          claimName: jellyfin-media-music
+      - name: beets-config
+        configMap:
+          name: beets-config
+      - name: beets-data
+        emptyDir: {}
+      restartPolicy: Never
+  backoffLimit: 1

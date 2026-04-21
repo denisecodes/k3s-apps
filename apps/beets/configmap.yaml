@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: beets-config
+  namespace: jellyfin
+data:
+  config.yaml: |
+    directory: /media/music
+    library: /config/musiclibrary.db
+    import:
+      move: no
+      copy: no
+      write: yes
+      autotag: yes
+      timid: no
+      log: /config/import.log
+    plugins:
+      - fetchart
+      - embedart
+      - lastgenre
+    lastgenre:
+      count: 1
+      prefer_specific: yes
+      source: track
+    fetchart:
+      auto: yes
+    embedart:
+      auto: yes
