@@ -20,7 +20,9 @@ spec:
             echo "Starting beets import..."
             beet -c /config/config.yaml import -q /media/music
 
-            echo "Tagging complete! Check /config/import.log for details."
+            echo "Tagging complete!"
+            echo "--- import.log ---"
+            cat /config/import.log
         env:
         - name: PUID
           value: "1000"
