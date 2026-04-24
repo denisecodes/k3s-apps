@@ -30,7 +30,8 @@ persistence:
   storageClass: longhorn
   accessMode: ReadWriteOnce
   size: 20Gi
-  annotations: {}
+  annotations:
+    helm.sh/resource-policy: keep
 
 # PostgreSQL database
 postgresql:
