@@ -11,6 +11,8 @@ persistence:
     size: 10Gi
     storageClass: longhorn
     accessMode: ReadWriteOnce
+    annotations:
+      helm.sh/resource-policy: keep
   
   # Cache volume (transcoding temp files)
   cache:
@@ -19,6 +21,8 @@ persistence:
     size: 50Gi
     storageClass: longhorn
     accessMode: ReadWriteOnce
+    annotations:
+      helm.sh/resource-policy: keep
   
   # Disable built-in media volume (using manual PVCs for consistency)
   media:
