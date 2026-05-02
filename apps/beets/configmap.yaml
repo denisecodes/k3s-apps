@@ -11,10 +11,8 @@ data:
       move: no
       copy: no
       write: yes
-      autotag: yes
-      timid: no
+      autotag: no
       log: /config/import.log
-      none_rec_action: asis
     plugins:
       - fetchart
       - embedart
@@ -27,8 +25,13 @@ data:
       canonical: yes
     fetchart:
       auto: yes
+      sources:
+        - coverart
+        - itunes
+        - amazon
+        - albumart
+      maxwidth: 1000
+      cautious: no
     embedart:
       auto: yes
-    match:
-      strong_rec_thresh: 0.90
-      medium_rec_thresh: 0.90
+      remove_art_file: yes

@@ -21,12 +21,15 @@ spec:
             mkdir -p /config
             cp /beets-config/config.yaml /config/config.yaml
 
-            echo "Starting beets import..."
-            echo "--- MusicBrainz connectivity check ---"
-            curl -sf --max-time 5 https://musicbrainz.org > /dev/null \
-              && echo "MusicBrainz: reachable" \
-              || echo "MusicBrainz: NOT reachable (autotag will have no candidates)"
+            echo "Step 1: Importing music into beets library..."
             beet -c /config/config.yaml import -q /music
+
+            echo "Step 2: Fetching and writing genres..."
+            beet -c /config/config.yaml lastgenre
+
+            echo "Step 3: Fetching and embedding artwork..."
+            beet -c /config/config.yaml fetchart
+            beet -c /config/config.yaml embedart
 
             echo "Tagging complete!"
             echo "--- import.log ---"
