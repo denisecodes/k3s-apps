@@ -29,7 +29,7 @@ persistence:
   enabled: true
   storageClass: longhorn
   accessMode: ReadWriteOnce
-  size: 20Gi
+  size: 1Gi
   annotations:
     helm.sh/resource-policy: keep
 
