@@ -2,10 +2,10 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: beets-config
-  namespace: jellyfin
+  namespace: navidrome
 data:
   config.yaml: |
-    directory: /media/music
+    directory: /music
     library: /config/musiclibrary.db
     import:
       move: no
@@ -14,7 +14,7 @@ data:
       autotag: yes
       timid: no
       log: /config/import.log
-      none_rec_action: asis  # if no match found at all, import as-is rather than skip
+      none_rec_action: asis
     plugins:
       - fetchart
       - embedart
@@ -23,11 +23,12 @@ data:
       count: 1
       prefer_specific: yes
       source: track
+      force: yes
+      canonical: yes
     fetchart:
       auto: yes
     embedart:
       auto: yes
     match:
-      strong_rec_thresh: 0.90   # anything below this = strong = auto-apply in quiet mode
-      medium_rec_thresh: 0.90   # same as strong = no medium zone, so nothing gets skipped
-                                # distances >= 0.90 fall to none_rec_action: asis
+      strong_rec_thresh: 0.90
+      medium_rec_thresh: 0.90

@@ -13,7 +13,7 @@ spec:
       exclude: 'application.yaml'
   destination:
     server: https://kubernetes.default.svc
-    namespace: jellyfin
+    namespace: navidrome
   # No syncPolicy.automated — sync manually when you want to run the job
   syncPolicy:
     syncOptions:

@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: beets-tagger-job
-  namespace: jellyfin
+  namespace: navidrome
   annotations:
     argocd.argoproj.io/hook: Sync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
@@ -26,7 +26,7 @@ spec:
             curl -sf --max-time 5 https://musicbrainz.org > /dev/null \
               && echo "MusicBrainz: reachable" \
               || echo "MusicBrainz: NOT reachable (autotag will have no candidates)"
-            beet -c /config/config.yaml import -q /media/music
+            beet -c /config/config.yaml import -q /music
 
             echo "Tagging complete!"
             echo "--- import.log ---"
@@ -38,7 +38,7 @@ spec:
           value: "1000"
         volumeMounts:
         - name: music
-          mountPath: /media/music
+          mountPath: /music
         - name: beets-config
           mountPath: /beets-config
         - name: beets-data
@@ -46,7 +46,7 @@ spec:
       volumes:
       - name: music
         persistentVolumeClaim:
-          claimName: jellyfin-media-music
+          claimName: navidrome-music
       - name: beets-config
         configMap:
           name: beets-config
