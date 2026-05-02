@@ -17,12 +17,10 @@ spec:
     - repoURL: https://github.com/denisecodes/k3s-apps
       targetRevision: HEAD
       ref: values
-    # Git repo source for PVCs and other manifests
+    # Git repo source for PVCs
     - repoURL: https://github.com/denisecodes/k3s-apps
       targetRevision: HEAD
-      path: apps/navidrome
-      directory:
-        include: 'pvcs/*.yaml'
+      path: apps/navidrome/pvcs
   destination:
     server: https://kubernetes.default.svc
     namespace: navidrome
