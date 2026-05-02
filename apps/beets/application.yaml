@@ -14,7 +14,7 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: navidrome
-  # No syncPolicy.automated — sync manually when you want to run the job
+  # No syncPolicy.automated — sync manually when you want to run the cronjob
   syncPolicy:
     syncOptions:
       - CreateNamespace=false
