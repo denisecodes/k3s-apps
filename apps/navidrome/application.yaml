@@ -17,10 +17,12 @@ spec:
     - repoURL: https://github.com/denisecodes/k3s-apps
       targetRevision: HEAD
       ref: values
-    # Git repo source for hardware acceleration Job (PostSync hook)
+    # Git repo source for PVCs and other manifests
     - repoURL: https://github.com/denisecodes/k3s-apps
       targetRevision: HEAD
       path: apps/navidrome
+      directory:
+        include: 'pvcs/*.yaml'
   destination:
     server: https://kubernetes.default.svc
     namespace: navidrome
