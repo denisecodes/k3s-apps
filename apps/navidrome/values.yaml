@@ -75,4 +75,4 @@ persistence:
 
 envFrom:
   - secretRef:
-      name: navidrome-spotify
+      name: navidrome-lastfm
