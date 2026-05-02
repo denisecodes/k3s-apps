@@ -32,6 +32,7 @@ data:
         - albumart
       maxwidth: 1000
       cautious: no
+      art_filename: cover
     embedart:
       auto: yes
       remove_art_file: yes
