@@ -72,3 +72,7 @@ persistence:
     enabled: true
     mountPath: /music
     existingClaim: navidrome-music
+
+envFrom:
+  - secretRef:
+      name: navidrome-spotify

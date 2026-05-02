@@ -21,6 +21,12 @@ spec:
     - repoURL: https://github.com/denisecodes/k3s-apps
       targetRevision: HEAD
       path: apps/navidrome/pvcs
+    # Git repo source for sealed Spotify secret
+    - repoURL: https://github.com/denisecodes/k3s-apps
+      targetRevision: HEAD
+      path: apps/navidrome
+      directory:
+        include: 'sealed-secret-spotify.yaml'
   destination:
     server: https://kubernetes.default.svc
     namespace: navidrome
