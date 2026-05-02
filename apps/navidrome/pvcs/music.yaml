@@ -3,6 +3,9 @@ kind: PersistentVolumeClaim
 metadata:
   name: navidrome-music
   namespace: navidrome
+  annotations:
+    # Ensure pvc is created and bound first via longhorn
+    argocd.argoproj.io/sync-wave: "-1" 
   labels:
     app: navidrome
     media-type: music
