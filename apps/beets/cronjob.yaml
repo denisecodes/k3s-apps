@@ -33,9 +33,8 @@ spec:
                 echo "Step 2: Fetching and writing genres..."
                 beet -c /config/config.yaml lastgenre
 
-                echo "Step 3: Fetching and embedding artwork..."
+                echo "Step 3: Fetching album artwork..."
                 beet -c /config/config.yaml fetchart
-                yes | beet -c /config/config.yaml embedart
 
                 echo "Tagging complete!"
                 echo "--- import.log ---"
