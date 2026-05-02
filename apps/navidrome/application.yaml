@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: navidrome
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    # Helm chart source from TrueCharts
+    - repoURL: https://djjudas21.github.io/charts/
+      chart: navidrome
+      targetRevision: 6.8.3
+      helm:
+        valueFiles:
+          - $values/apps/navidrome/values.yaml
+    # Git repo source for values.yaml
+    - repoURL: https://github.com/denisecodes/k3s-apps
+      targetRevision: HEAD
+      ref: values
+    # Git repo source for hardware acceleration Job (PostSync hook)
+    - repoURL: https://github.com/denisecodes/k3s-apps
+      targetRevision: HEAD
+      path: apps/navidrome
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: navidrome
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+  ignoreDifferences:
+    - group: ""
+      kind: PersistentVolumeClaim
+      jsonPointers:
+        - /spec/volumeName
