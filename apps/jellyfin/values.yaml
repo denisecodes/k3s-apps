@@ -32,15 +32,15 @@ persistence:
 # Media volumes (manual PVCs for better organization)
 # Note: Music storage now handled by Navidrome as primary music streaming app
 volumes:
-  # Movies PVC (references pvcs/media-movies.yaml)
+  # Movies PVC (references pvcs/media-movies-new.yaml)
   - name: media-movies
     persistentVolumeClaim:
-      claimName: jellyfin-media-movies
+      claimName: jellyfin-media-movies-new
   
-  # TV shows PVC (references pvcs/media-tv.yaml)
+  # TV shows PVC (references pvcs/media-tv-new.yaml)
   - name: media-tv
     persistentVolumeClaim:
-      claimName: jellyfin-media-tv
+      claimName: jellyfin-media-tv-new
 
 volumeMounts:
   # Mount movies at /media/movies

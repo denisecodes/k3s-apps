@@ -33,8 +33,8 @@ service:
     type: ClusterIP
 
 # Monitoring configuration
-# ServiceMonitor enabled for Prometheus scraping of Longhorn metrics
-# Provides visibility into storage health, I/O performance, and replica sync status
+# ServiceMonitor requires Prometheus Operator to be installed
+# Disable for now - can be enabled later when Prometheus is deployed
 metrics:
   serviceMonitor:
-    enabled: true
+    enabled: false
