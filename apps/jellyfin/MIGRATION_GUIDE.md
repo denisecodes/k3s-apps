@@ -5,14 +5,54 @@ This guide explains how to migrate Jellyfin data from old PVCs to new larger PVC
 ## Overview
 
 **Storage expansion:**
-- **Movies**: 20Gi → 1.5TB (75x expansion)
-- **TV Shows**: 30Gi → 2.0TB (67x expansion)
-- **Cache**: 50Gi → 500Gi (10x expansion) - *automatically rebuilt, no manual migration needed*
+- **Movies**: 20Gi → 1TB (50x expansion)
+- **TV Shows**: 30Gi → 1.5TB (50x expansion)
+- **Cache**: 50Gi → 250Gi (5x expansion) - *automatically rebuilt, no manual migration needed*
 - **Music**: Removed (consolidated to Navidrome)
 
 **Estimated downtime**: 30-45 minutes (Jellyfin only; other services remain online)
 
 ## Prerequisites
+
+**IMPORTANT**: Before creating new PVCs, you must configure Longhorn to use the new HDD (`/mnt/hdd`).
+
+### Step 0: Configure Longhorn to Use New HDD
+
+Longhorn currently stores data in `/var/lib/longhorn/` (root partition, 232GB). We need to add the 7.3TB HDD.
+
+**Option A: Using Longhorn UI (Recommended)**
+1. Access Longhorn UI at http://longhorn.denise.home
+2. Go to **Node** tab → Click your node (`denise-home-k3s`)
+3. Click **Edit Node and Disks**
+4. Click **Add Disk**:
+   - Path: `/mnt/hdd/longhorn`
+   - Storage Reserved: 230GB (10% of 7.3TB)
+   - Tags: `hdd`, `high-capacity`
+   - Enable **Allow Scheduling**
+5. Click **Save**
+
+**Option B: Using kubectl**
+```bash
+# Ensure HDD is mounted and directory exists
+sudo mkdir -p /mnt/hdd/longhorn
+sudo chown -R root:root /mnt/hdd/longhorn
+sudo chmod 755 /mnt/hdd/longhorn
+
+# Get current node config and add new disk
+kubectl get nodes.longhorn.io denise-home-k3s -n longhorn-system -o yaml > /tmp/longhorn-node.yaml
+# Edit /tmp/longhorn-node.yaml to add new disk under spec.disks, then:
+kubectl apply -f /tmp/longhorn-node.yaml
+```
+
+**Verify Disk Addition:**
+```bash
+# Check Longhorn UI - disk should show as Scheduled
+# Or check via kubectl:
+kubectl get nodes.longhorn.io denise-home-k3s -n longhorn-system -o jsonpath='{.spec.disks}' | jq 'keys'
+# Should show both "default-disk-..." and "hdd-disk-..."
+```
+
+---
 
 1. New PVCs will be automatically created by ArgoCD when changes are synced:
    ```bash
@@ -20,17 +60,17 @@ This guide explains how to migrate Jellyfin data from old PVCs to new larger PVC
    kubectl get pvc -n jellyfin
    # Output should show:
    # - jellyfin-media-movies (20Gi - old)
-   # - jellyfin-media-movies-new (1.5Ti - new)
+   # - jellyfin-media-movies-new (1Ti - new)
    # - jellyfin-media-tv (30Gi - old)
-   # - jellyfin-media-tv-new (2Ti - new)
-   # - jellyfin-cache-new (500Gi - new)
+   # - jellyfin-media-tv-new (1.5Ti - new)
+   # - jellyfin-cache-new (250Gi - new)
    # - jellyfin-cache (50Gi - old, will be replaced by new one)
    ```
 
 2. Longhorn volumes should be healthy:
    ```bash
    # Check Longhorn UI at http://longhorn.denise.home
-   # All volumes should show healthy status
+   # All volumes should show healthy status with replicas on the HDD disk
    ```
 
 3. Current Jellyfin should be running normally with data in old volumes
@@ -65,13 +105,13 @@ The migration pod runs rsync operations for movies and TV shows. Execute via kub
 # Get the migration pod name
 POD=$(kubectl get pod -l app=jellyfin-migration -n jellyfin -o jsonpath='{.items[0].metadata.name}')
 
-# Migrate Movies (20Gi → 1.5TB)
-echo "=== Migrating Movies (20Gi → 1.5TB) ==="
+# Migrate Movies (20Gi → 1TB)
+echo "=== Migrating Movies (20Gi → 1TB) ==="
 kubectl exec -it $POD -n jellyfin -- rsync -avz --delete /old-data/movies/ /new-data/movies/
 # Expected time: 5-10 minutes depending on storage speed
 
-# Migrate TV Shows (30Gi → 2TB)
-echo "=== Migrating TV Shows (30Gi → 2TB) ==="
+# Migrate TV Shows (30Gi → 1.5TB)
+echo "=== Migrating TV Shows (30Gi → 1.5TB) ==="
 kubectl exec -it $POD -n jellyfin -- rsync -avz --delete /old-data/tv/ /new-data/tv/
 # Expected time: 10-15 minutes
 ```

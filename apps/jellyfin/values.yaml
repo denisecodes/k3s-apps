@@ -15,11 +15,11 @@ persistence:
       helm.sh/resource-policy: keep
   
   # Cache volume (transcoding temp files)
-  # Expanded to 500Gi to support 4K transcoding with larger queue
+  # Expanded to 250Gi to support 4K transcoding while maintaining HDD capacity
   cache:
     enabled: true
     type: pvc
-    size: 500Gi
+    size: 250Gi
     storageClass: longhorn
     accessMode: ReadWriteOnce
     annotations:
