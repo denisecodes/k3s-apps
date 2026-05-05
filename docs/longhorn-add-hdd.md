@@ -1,110 +1,128 @@
 # Adding a New HDD to Longhorn
 
-This guide documents the steps required to add a new hard drive to your k3s cluster and configure it for use with Longhorn storage.
+This guide documents the exact steps to add a new hard drive to your k3s cluster and configure it for Longhorn storage.
 
 ## Prerequisites
 
-- Physical HDD installed and detected by the node (`lsblk` to verify)
-- Node has the `node.longhorn.io/create-default-disk` annotation set to "true" (or manual disk addition)
+- Physical HDD installed and detected by the node
+- Access to the master node (or node where the drive is installed)
 
 ## Steps
 
-### 1. Format and Mount the New Drive
+### 1. Identify and Format the New Drive
 
 ```bash
-# List block devices to find your new drive (e.g., /dev/sdb)
+# List block devices to find your new drive (e.g., /dev/sdb or /dev/sdb1)
 lsblk
+lsblk -f
+```
 
-# Create a filesystem (ext4 recommended for Longhorn)
-sudo mkfs.ext4 /dev/sdb
+### 2. Format the Drive with ext4
 
-# Create mount point
-sudo mkdir -p /mnt/hdd/longhorn
+```bash
+# Format the partition (adjust /dev/sdb1 to your device)
+sudo mkfs.ext4 /dev/sdb1
+```
+
+### 3. Get the UUID for fstab
+
+```bash
+# Get UUID for persistent mounting
+sudo blkid /dev/sdb1
+```
+
+### 4. Create Mount Point and Mount
+
+```bash
+# Create mount directory
+sudo mkdir -p /mnt/hdd
 
 # Mount the drive
-sudo mount /dev/sdb /mnt/hdd/longhorn
-
-# Add to /etc/fstab for persistence across reboots
-echo '/dev/sdb /mnt/hdd/longhorn ext4 defaults 0 2' | sudo tee -a /etc/fstab
+sudo mount /dev/sdb1 /mnt/hdd
 
 # Verify mount
-df -h | grep longhorn
+df -h
 ```
 
-### 2. Set Storage Reserved (Important)
+### 5. Add to fstab for Persistence Across Reboots
 
-Longhorn needs free space on the filesystem for overhead. Set `Storage Reserved` to prevent Longhorn from filling the disk completely.
-
-**Recommended reservation:**
-- For filesystems: ~10% of total capacity, or minimum 20-50GB
-- Formula: `Storage Reserved = Total Capacity × 0.10`
-
-Example for a 3TB drive:
-```
-Storage Reserved = 3TB × 0.10 ≈ 300GB
-Storage Reserved (bytes) = 300 × 1024^3 ≈ 322122547200
-```
-
-**To set via Longhorn UI:**
-1. Navigate to **Node** tab
-2. Click the node with the new drive
-3. Click **Edit** on the disk
-4. Set **Storage Reserved** to appropriate value in bytes
-5. Click **Save**
-
-**To set via kubectl:**
 ```bash
-# Get the node name
-kubectl get nodes
+# Add to fstab using UUID (replace with your actual UUID from blkid output)
+echo "UUID=ef255403-6a65-4a41-820d-09fcda970666 /mnt/hdd ext4 defaults 0 2" | sudo tee -a /etc/fstab
 
-# Edit the node annotations
-kubectl annotate node <node-name> \
-  longhorn.io/storage-reserved-<disk-path>=<bytes> \
-  --overwrite
+# Reload systemd to recognize changes
+sudo systemctl daemon-reload
+
+# Test fstab entry (unmount and remount all)
+sudo umount /mnt/hdd && sudo mount -a
+
+# Verify
+df -h /mnt/hdd
 ```
 
-### 3. Add Disk to Longhorn
+### 6. Create Longhorn Directory
 
-**Via Longhorn UI:**
-1. Navigate to **Node** tab
-2. Click the node where the drive is mounted
-3. Click **Edit** next to the node
-4. Click **Add Disk**
-5. Set:
-   - **Name**: e.g., `hdd-disk-7-3tb`
-   - **Path**: `/mnt/hdd/longhorn`
-   - **Disk Type**: `filesystem`
-   - **Storage Reserved**: (calculated above)
-6. Click **Save**
-
-**Via kubectl (manual):**
 ```bash
-# Edit the node resource
-kubectl edit node.longhorn.io <node-name> -n longhorn-system
+# Create the longhorn subdirectory
+sudo mkdir -p /mnt/hdd/longhorn
 
-# Add disk under spec.disks:
+# Set permissions
+sudo chmod 755 /mnt/hdd/longhorn
+
+# Verify
+df -h /mnt/hdd
+```
+
+### 7. Add Disk to Longhorn
+
+```bash
+# Edit the Longhorn node resource
+kubectl edit nodes.longhorn.io denise-home-k3s -n longhorn-system
+```
+
+In the editor, add the disk under `spec.disks:`:
+
+```yaml
 spec:
   disks:
-    hdd-disk-7-3tb:
+    hdd-disk-7-3tb:          # Choose a descriptive name
       path: /mnt/hdd/longhorn
       type: filesystem
-      storageReserved: 322122547200  # 300GB in bytes
+      storageReserved: 247390662656  # ~230GB in bytes (adjust based on your capacity)
       allowScheduling: true
+      tags:
+        - hdd
+        - high-capacity
 ```
 
-### 4. Verify Disk is Ready
+**Save and exit** (`:wq` in vi/vim or `Ctrl+X` then `Y` in nano).
+
+### 8. Verify Disk is Ready
 
 ```bash
-# Check Longhorn UI
-# Navigate to Node tab - disk should show:
-# - Status: Scheduled
-# - Conditions: Ready
+# Check the disks on the node
+kubectl get nodes.longhorn.io denise-home-k3s -n longhorn-system -o jsonpath='{.spec.disks}' | jq 'keys'
 
-# Or check via kubectl
-kubectl get node.longhorn.io -n longhorn-system <node-name> -o yaml | grep -A 10 "disks:"
+# Or check via Longhorn UI:
+# Navigate to Node tab → Click the node → Verify disk shows:
+#   - Status: Scheduled
+#   - Conditions: Ready
 ```
 
-### 5. Test PVC Creation
+## Storage Reserved Calculation
+
+The `storageReserved` value is in bytes and should be ~10% of your total capacity:
+
+| Disk Size | Reserved (10%) | Bytes |
+|-----------|-----------------|-------|
+| 1TB       | 100GB           | 107374182400 |
+| 2TB       | 200GB           | 214748364800 |
+| 3TB       | 300GB           | 322122547200 |
+| 4TB       | 400GB           | 429496729600 |
+
+Your current setting: `247390662656` bytes ≈ 230GB (custom amount for your 3TB drive).
+
+## Verification
 
 ```bash
 # Create a test PVC to verify the new disk is usable
@@ -133,12 +151,12 @@ kubectl delete pvc test-pvc
 ## Troubleshooting
 
 ### Disk Shows "Unschedulable"
-- Check available space: `df -h /mnt/hdd/longhorn`
-- Verify `Storage Reserved` isn't too high (leaving no room for volumes)
+- Check available space: `df -h /mnt/hdd`
+- Verify `storageReserved` isn't too high (leaving no room for volumes)
 - Check Longhorn conditions: `kubectl describe node.longhorn.io <node> -n longhorn-system`
 
 ### PVC Stuck in "Pending"
-- Verify the disk is ready in Longhorn UI
+- Verify the disk is ready in Longhorn UI (Node tab)
 - Check if Longhorn has enough free space for the requested size
 - Review events: `kubectl get events -n longhorn-system --sort-by='.lastTimestamp'`
 
@@ -150,13 +168,28 @@ physical free space would drop below minimal
 ```
 
 **Fix:**
-1. Increase `Storage Reserved` to leave more free space
+1. Increase `storageReserved` to leave more free space
 2. Or expand the physical disk capacity
 3. The Longhorn minimum is calculated as: `max(10% of disk, 10GB)` approximately
 
 ## Notes
 
-- **Tags**: Add tags like `hdd`, `high-capacity` to disks for scheduling rules
+- **Tags**: Add tags like `hdd`, `high-capacity` to disks for scheduling rules in Longhorn
 - **Replica Count**: For single-node setups, keep replica count at 1 (no duplication)
 - **Filesystem vs Block**: Use `filesystem` type for most use cases (allows expansion)
 - **Multiple Disks**: Longhorn can use multiple disks on the same node - add each as a separate disk entry
+- **Commands you ran** (from history):
+  ```bash
+  lsblk
+  lsblk -f
+  sudo mkfs.ext4 /dev/sdb1
+  sudo mkdir -p /mnt/hdd
+  sudo mount /dev/sdb1 /mnt/hdd
+  df -h
+  sudo blkid /dev/sdb1
+  sudo nano /etc/fstab
+  sudo mkdir -p /mnt/hdd/longhorn
+  sudo chmod 755 /mnt/hdd/longhorn
+  kubectl edit nodes.longhorn.io denise-home-k3s -n longhorn-system
+  kubectl get nodes.longhorn.io denise-home-k3s -n longhorn-system -o jsonpath='{.spec.disks}'
+  ```
