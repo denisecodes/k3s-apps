@@ -17,6 +17,10 @@ spec:
     - repoURL: https://github.com/denisecodes/k3s-apps
       targetRevision: HEAD
       ref: values
+    # Git repo source for PVCs
+    - repoURL: https://github.com/denisecodes/k3s-apps
+      targetRevision: HEAD
+      path: apps/jellyfin/pvcs
     # Git repo source for hardware acceleration Job (PostSync hook)
     - repoURL: https://github.com/denisecodes/k3s-apps
       targetRevision: HEAD

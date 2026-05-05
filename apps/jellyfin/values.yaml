@@ -15,10 +15,11 @@ persistence:
       helm.sh/resource-policy: keep
   
   # Cache volume (transcoding temp files)
+  # Expanded to 500Gi to support 4K transcoding with larger queue
   cache:
     enabled: true
     type: pvc
-    size: 50Gi
+    size: 500Gi
     storageClass: longhorn
     accessMode: ReadWriteOnce
     annotations:
@@ -29,6 +30,7 @@ persistence:
     enabled: false
 
 # Media volumes (manual PVCs for better organization)
+# Note: Music storage now handled by Navidrome as primary music streaming app
 volumes:
   # Movies PVC (references pvcs/media-movies.yaml)
   - name: media-movies
@@ -39,11 +41,6 @@ volumes:
   - name: media-tv
     persistentVolumeClaim:
       claimName: jellyfin-media-tv
-  
-  # Music PVC (references pvcs/media-music.yaml)
-  - name: media-music
-    persistentVolumeClaim:
-      claimName: jellyfin-media-music
 
 volumeMounts:
   # Mount movies at /media/movies
@@ -53,10 +50,6 @@ volumeMounts:
   # Mount TV shows at /media/tv
   - name: media-tv
     mountPath: /media/tv
-  
-  # Mount music at /media/music
-  - name: media-music
-    mountPath: /media/music
 
 # Resource limits for 4K transcoding with Intel Quick Sync
 # GPU resource request enables hardware acceleration via Intel GPU Device Plugin
