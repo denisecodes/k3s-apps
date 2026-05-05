@@ -1,8 +1,11 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: jellyfin-media-movies
+  name: jellyfin-movies
   namespace: jellyfin
+  annotations:
+    # Ensure pvc is created and bound first via longhorn
+    argocd.argoproj.io/sync-wave: "-1"
   labels:
     app: jellyfin
     media-type: movies

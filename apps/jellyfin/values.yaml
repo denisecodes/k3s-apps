@@ -22,7 +22,7 @@ persistence:
     size: 500Gi
     storageClass: longhorn
     accessMode: ReadWriteOnce
-    existingClaim: jellyfin-cache-new
+    existingClaim: jellyfin-cache
   
   # Disable built-in media volume (using manual PVCs for consistency)
   media:
@@ -31,15 +31,15 @@ persistence:
 # Media volumes (manual PVCs for better organization)
 # Note: Music storage now handled by Navidrome as primary music streaming app
 volumes:
-  # Movies PVC (references pvcs/media-movies-new.yaml)
+  # Movies PVC (references pvcs/jellyfin-movies.yaml)
   - name: media-movies
     persistentVolumeClaim:
-      claimName: jellyfin-media-movies-new
+      claimName: jellyfin-movies
   
-  # TV shows PVC (references pvcs/media-tv-new.yaml)
+  # TV shows PVC (references pvcs/jellyfin-tv.yaml)
   - name: media-tv
     persistentVolumeClaim:
-      claimName: jellyfin-media-tv-new
+      claimName: jellyfin-tv
 
 volumeMounts:
   # Mount movies at /media/movies
