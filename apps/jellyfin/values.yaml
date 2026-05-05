@@ -15,15 +15,10 @@ persistence:
       helm.sh/resource-policy: keep
   
   # Cache volume (transcoding temp files)
-  # Expanded to 500Gi to support 4K transcoding with larger queue
+  # Disabled - using manually created jellyfin-cache-new PVC (500Gi)
+  # Helm-managed cache disabled to avoid Longhorn provisioning issues
   cache:
-    enabled: true
-    type: pvc
-    size: 500Gi
-    storageClass: longhorn
-    accessMode: ReadWriteOnce
-    annotations:
-      helm.sh/resource-policy: keep
+    enabled: false
   
   # Disable built-in media volume (using manual PVCs for consistency)
   media:
@@ -42,6 +37,11 @@ volumes:
     persistentVolumeClaim:
       claimName: jellyfin-media-tv-new
 
+  # Cache PVC (references pvcs/media-cache-new.yaml)
+  - name: cache
+    persistentVolumeClaim:
+      claimName: jellyfin-cache-new
+
 volumeMounts:
   # Mount movies at /media/movies
   - name: media-movies
@@ -50,6 +50,10 @@ volumeMounts:
   # Mount TV shows at /media/tv
   - name: media-tv
     mountPath: /media/tv
+
+  # Mount cache at /cache for transcoding temp files
+  - name: cache
+    mountPath: /cache
 
 # Resource limits for 4K transcoding with Intel Quick Sync
 # GPU resource request enables hardware acceleration via Intel GPU Device Plugin
