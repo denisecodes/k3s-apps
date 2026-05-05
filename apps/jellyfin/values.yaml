@@ -8,6 +8,7 @@ persistence:
   # Config volume (database, settings, metadata)
   config:
     enabled: true
+    existingClaim: jellyfin-config
     size: 10Gi
     storageClass: longhorn
     accessMode: ReadWriteOnce
