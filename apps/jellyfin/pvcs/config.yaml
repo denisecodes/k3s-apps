@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jellyfin-config
+  namespace: jellyfin
+  annotations:
+    # Ensure pvc is created and bound first via longhorn
+    argocd.argoproj.io/sync-wave: "-1"
+  labels:
+    app: jellyfin
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  volumeName: pvc-c74c9af0-b7e5-4f01-83a0-75c28fff118b
+  resources:
+    requests:
+      storage: 10Gi
