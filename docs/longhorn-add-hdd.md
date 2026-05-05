@@ -17,10 +17,27 @@ lsblk
 lsblk -f
 ```
 
-### 2. Format the Drive with ext4
+### 2. Create GPT Partition Table and Partition
 
 ```bash
-# Format the partition (adjust /dev/sdb1 to your device)
+# Run fdisk on the new drive (e.g., /dev/sdb - NOT the partition)
+sudo fdisk /dev/sdb
+
+# Inside fdisk, run these commands:
+# g  - create a new GPT partition table
+# n  - create a new partition
+#    - accept default partition number (Enter)
+#    - accept default first sector (Enter)
+#    - accept default last sector (Enter) to use whole disk
+# w  - write changes and exit
+```
+
+This creates `/dev/sdb1` partition.
+
+### 3. Format the Partition with ext4
+
+```bash
+# Format the new partition (NOT the whole disk)
 sudo mkfs.ext4 /dev/sdb1
 ```
 
