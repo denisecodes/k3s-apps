@@ -1,16 +1,15 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: jellyfin-media-movies-new
+  name: jellyfin-cache
   namespace: jellyfin
   labels:
     app: jellyfin
-    media-type: movies
-    version: new
+    media-type: cache
 spec:
   accessModes:
     - ReadWriteOnce
   storageClassName: longhorn
   resources:
     requests:
-      storage: 1.5Ti
+      storage: 500Gi
